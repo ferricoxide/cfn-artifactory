@@ -132,7 +132,7 @@ pipeline {
                         echo "Attempting to create stack ${CfnStackRoot}-ElbRes..."
                         aws --region "${AwsRegion}" cloudformation create-stack --stack-name "${CfnStackRoot}-ElbRes" \
                           --disable-rollback --capabilities CAPABILITY_NAMED_IAM \
-                          --template-body file://Templates/make_artifactory_ELBv2.tmplt.json \
+                          --template-body file://Templates/make_artifactory-EE_ELBv2.tmplt.json \
                           --parameters file://ELBv2.parms.json
  
                         sleep 15
