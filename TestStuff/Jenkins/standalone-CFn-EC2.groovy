@@ -68,6 +68,7 @@ pipeline {
         string(name: 'WatchmakerConfig', description: '(Optional) Path to a Watchmaker config file.  The config file path can be a remote source (i.e. http[s]://, s3://) or local directory (i.e. file://)')
         string(name: 'WatchmakerEnvironment', defaultValue: 'dev', description: 'Environment in which the instance is being deployed')
         string(name: 'WatchmakerOuPath', description: '(Optional) DN of the OU to place the instance when joining a domain. If blank and "WatchmakerEnvironment" enforces a domain join, the instance will be placed in a default container. Leave blank if not joining a domain, or if "WatchmakerEnvironment" is "false"')
+        string(name: 'ElbArn', description: 'Amazon Resource Name (ARN) of the ELBv2 target-group to register instance to')
     }
 
     stages {
@@ -312,6 +313,46 @@ pipeline {
                         else
                            echo "Stack-creation ended with non-successful state"
                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
+        stage ('Attach to ELB') {
+            steps {
+                withCredentials(
+                    [
+                        [$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: "${AwsCred}", secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+                        sshUserPrivateKey(credentialsId: "${GitCred}", keyFileVariable: 'SSH_KEY_FILE', passphraseVariable: 'SSH_KEY_PASS', usernameVariable: 'SSH_KEY_USER')
+                    ]
+                ) {
+                    sh '''#!/bin/bash
+                        printf "Getting instance-ID of new instance..."
+                        INSTANCE_ID=$(
+                              aws cloudformation describe-stacks --stack-name "${CfnStackRoot}-Ec2Res" \
+                                --query "Stacks[].Outputs[?OutputKey=='InstanceId'].OutputValue" \
+                                --output=text
+                           )
+
+                        if [[ -z ${INSTANCE_ID} ]]
+                        then
+                           echo "Failed to get instance-ID of new instance" > /dev/stderr
+                           exit 1
+                        else
+                           echo "Success"
+                        fi
+
+                        printf "Attempting to register instance "
+                        printf "['%s'] to ELB... " "\${INSTANCE_ID}"
+                        aws elbv2 register-targets --target-group-arn "${ElbArn}" \
+                          --targets "Id=\${INSTANCE_ID}"
+                        REGEXIT="$?"
+                        if [[ ${REGEXIT} -eq 0 ]]
+                        then
+                           echo "Success"
+                        else
+                           echo "Failed to register instance to ELB" > /dev/stderr
+                           exit ${REGEXIT}
                         fi
                     '''
                 }
