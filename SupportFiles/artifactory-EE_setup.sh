@@ -249,6 +249,18 @@ function SelMods {
 }
 
 ##
+## Update JAVA_OPTIONS to align to instance memory-size
+function TuneJvm {
+   ARTIFACTORY_OPTS="$( rpm -qla \*artifactory\* | grep -E "/default$" )"
+
+   printf "Setting Artifactory memory to %sm... " "${ARTIFACTORY_OPTS}"
+   sed -e "s/-Xms[0-9]*[mgMG] /-Xms${MEMALLOC}m /" \
+       -e "s/-Xmx[0-9]*[mgMG] /-Xmx${MEMALLOC}m /" \
+       -i "${ARTIFACTORY_OPTS}" && echo "Success" || \
+         err_exit "Failed updating Artifactory reserved-memory"
+}
+
+##
 ## Set up NGINX-based reverse-proxy service
 function ReverseProxy {
    # Install Nginx
@@ -511,6 +523,15 @@ do
        echo "Success" || err_exit "Failed creating ${CLUDIR}"
   fi
 done
+
+# Tune JVM as necessary
+if [[ ${MEMALLOC} -gt 2048 ]]
+then
+   echo "Attempting to tune Artifactory's JVM"
+   TuneJvm
+else
+   echo "Not enough free memory to tune Artifactory's JVM"
+fi
 
 # Configure NGINX-based reverse-proxy
 ReverseProxy
