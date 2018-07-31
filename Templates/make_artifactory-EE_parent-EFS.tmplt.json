@@ -30,11 +30,117 @@
       "Description": "Name of the S3 Bucket hosting the CloudWatch agent archive files",
       "Type": "String"
     },
+    "DbAdminName": {
+      "Description": "Name of the Artifactory master database-user.",
+      "Type": "String"
+    },
+    "DbAdminPass": {
+      "Default": "",
+      "Description": "Password of the Artifactory master database-user.",
+      "NoEcho": "True",
+      "Type": "String"
+    },
+    "DbDataSize": {
+      "ConstraintDescription": "Must be between 5GB and 6144GB.",
+      "Default": "5",
+      "Description": "Size in GiB of the RDS table-space to create.",
+      "MaxValue": "6144",
+      "MinValue": "5",
+      "Type": "Number"
+    },
+    "DbInstanceName": {
+      "Default": "",
+      "Description": "Instance-name of the Artifactory database.",
+      "Type": "String"
+    },
+    "DbInstanceType": {
+      "AllowedValues": [
+        "db.t2.micro",
+        "db.t2.small",
+        "db.t2.medium",
+        "db.t2.large",
+        "db.t2.xlarge",
+        "db.t2.2xlarge",
+        "db.m4.large",
+        "db.m4.xlarge",
+        "db.m4.2xlarge",
+        "db.m4.4xlarge",
+        "db.m3.medium",
+        "db.m3.large",
+        "db.m3.xlarge",
+        "db.m3.2xlarge",
+        "db.r4.large",
+        "db.r4.xlarge",
+        "db.r4.2xlarge",
+        "db.r4.4xlarge",
+        "db.r3.large",
+        "db.r3.xlarge",
+        "db.r3.2xlarge",
+        "db.r3.4xlarge"
+      ],
+      "Default": "db.t2.small",
+      "Description": "Amazon RDS instance type",
+      "Type": "String"
+    },
+    "DbIsMultiAz": {
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Default": "false",
+      "Description": "Select whether to create a multi-AZ RDS deployment.",
+      "Type": "String"
+    },
+    "DbNodeName": {
+      "Description": "NodeName of the Artifactory database.",
+      "Type": "String"
+    },
+    "DbSnapshotId": {
+      "AllowedPattern": "^$|^arn:.*$",
+      "Default": "",
+      "Description": "(Optional) RDS snapshot-ARN to clone new database from.",
+      "Type": "String"
+    },
+    "DbStorageIops": {
+      "Default": "1000",
+      "Description": "Provisioned-IOPS of storage to used to host DB-data.",
+      "MaxValue": "30000",
+      "MinValue": "1000",
+      "Type": "Number"
+    },
+    "DbStorageType": {
+      "AllowedValues": [
+        "standard",
+        "gp2",
+        "io1"
+      ],
+      "Default": "gp2",
+      "Description": "Type of storage used to host DB-data.",
+      "Type": "String"
+    },
     "FinalExpirationDays": {
       "ConstraintDescription": "Must be an integer value greater than '0'.",
       "Default": "30",
       "Description": "Number of days to retain objects before aging them out of the bucket",
       "Type": "Number"
+    },
+    "PgsqlVersion": {
+      "AllowedValues": [
+        "9.6.6",
+        "9.6.5",
+        "9.6.3",
+        "9.6.2",
+        "9.6.1",
+        "9.5.10",
+        "9.5.9",
+        "9.5.7",
+        "9.5.6",
+        "9.5.4",
+        "9.5.2"
+      ],
+      "Default": "9.6.3",
+      "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
+      "Type": "String"
     },
     "RetainIncompleteDays": {
       "ConstraintDescription": "Must be an integer value between '0' and '30'",
@@ -113,7 +219,7 @@
             ]
           ]
         },
-        "TimeoutInMinutes": "10"
+        "TimeoutInMinutes": "15"
       },
       "Type": "AWS::CloudFormation::Stack"
     },
@@ -123,12 +229,7 @@
           "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucketArn" ] },
           "CloudwatchBucketName": { "Ref": "CloudwatchBucketName" },
           "RolePrefix": { "Ref": "RolePrefix" },
-          "ShardBucketArn": {
-            "Fn::GetAtt": [
-              "S3Res",
-              "Outputs.ShardBucketArn"
-            ]
-          }
+          "ShardBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.ShardBucketArn" ] }
         },
         "TemplateURL": {
           "Fn::Join": [
@@ -139,7 +240,43 @@
             ]
           ]
         },
-        "TimeoutInMinutes": "10"
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "RdsRes": {
+      "Properties": {
+        "Parameters": {
+          "DbAdminName": { "Ref": "DbAdminName" },
+          "DbAdminPass": { "Ref": "DbAdminPass" },
+          "DbDataSize": { "Ref": "DbDataSize" },
+          "DbInstanceName": { "Ref": "DbInstanceName" },
+          "DbInstanceType": { "Ref": "DbInstanceType" },
+          "DbIsMultiAz": { "Ref": "DbIsMultiAz" },
+          "DbNodeName": { "Ref": "DbNodeName" },
+          "DbSecurityGroup": { "Fn::GetAtt": [ "SgRes", "Outputs.RdsSg" ] },
+          "DbSnapshotId": { "Ref": "DbSnapshotId" },
+          "DbStorageIops": { "Ref": "DbStorageIops" },
+          "DbStorageType": { "Ref": "DbStorageType" },
+          "DbSubnets": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "ServiceSubnets" }
+            ]
+          },
+          "PgsqlVersion": { "Ref": "PgsqlVersion" },
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_RDS.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "60"
       },
       "Type": "AWS::CloudFormation::Stack"
     },
@@ -165,7 +302,7 @@
             ]
           ]
         },
-        "TimeoutInMinutes": "10"
+        "TimeoutInMinutes": "15"
       },
       "Type": "AWS::CloudFormation::Stack"
     },
@@ -183,7 +320,7 @@
             ]
           ]
         },
-        "TimeoutInMinutes": "10"
+        "TimeoutInMinutes": "15"
       },
       "Type": "AWS::CloudFormation::Stack"
     }
