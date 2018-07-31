@@ -53,6 +53,10 @@
       "Description": "Root URL where all templated files are stored.",
       "Type": "String"
     },
+    "ServiceSubnets": {
+      "Description": "Select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
     "ShardBucketInventoryTracking": {
       "AllowedValues": [
         "true",
@@ -89,13 +93,42 @@
     }
   },
   "Resources": {
+    "EfsRes": {
+      "Properties": {
+        "Parameters": {
+          "EfsSg": { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] },
+          "EfsSubnet": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "ServiceSubnets" }
+            ]
+          }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_EFS.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
     "IamRes": {
       "Properties": {
         "Parameters": {
           "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucketArn" ] },
           "CloudwatchBucketName": { "Ref": "CloudwatchBucketName" },
           "RolePrefix": { "Ref": "RolePrefix" },
-          "ShardBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.ShardBucketArn" ] }
+          "ShardBucketArn": {
+            "Fn::GetAtt": [
+              "S3Res",
+              "Outputs.ShardBucketArn"
+            ]
+          }
         },
         "TemplateURL": {
           "Fn::Join": [
