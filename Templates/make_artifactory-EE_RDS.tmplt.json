@@ -184,6 +184,7 @@
             { "Ref": "DbInstanceName" }
           ]
         },
+        "DBParameterGroupName": { "Ref": "RDSdbParmGrp" },
         "DBSnapshotIdentifier": {
           "Fn::If": [
             "UseDbSnapshot",
