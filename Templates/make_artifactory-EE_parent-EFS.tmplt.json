@@ -4,6 +4,31 @@
   "Metadata": {},
   "Outputs": {},
   "Parameters": {
+    "ArtifactoryListenPort": {
+      "Default": "443",
+      "Description": "TCP Port number on which the Artifactory ELB listens for requests.",
+      "MaxValue": "65535",
+      "MinValue": "1",
+      "Type": "Number"
+    },
+    "ArtifactoryListenerCert": {
+      "Default": "",
+      "Description": "Name/ID of the ACM-managed SSL Certificate to protect public listener.",
+      "Type": "String"
+    },
+    "ArtifactoryServicePort": {
+      "Default": "8081",
+      "Description": "TCP Port number that the Artifactory host listens to.",
+      "MaxValue": "65535",
+      "Type": "Number"
+    },
+    "BackendTimeout": {
+      "Default": "600",
+      "Description": "How long - in seconds - back-end connection may be idle before attempting session-cleanup",
+      "MaxValue": "3600",
+      "MinValue": "60",
+      "Type": "Number"
+    },
     "BackupBucketInventoryTracking": {
       "AllowedValues": [
         "true",
@@ -126,11 +151,17 @@
     },
     "PgsqlVersion": {
       "AllowedValues": [
+        "10.4",
+        "10.3",
+        "9.6.9",
+        "9.6.8",
         "9.6.6",
         "9.6.5",
         "9.6.3",
         "9.6.2",
         "9.6.1",
+        "9.5.13",
+        "9.5.12",
         "9.5.10",
         "9.5.9",
         "9.5.7",
@@ -140,6 +171,10 @@
       ],
       "Default": "9.6.3",
       "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
+      "Type": "String"
+    },
+    "ProxyPrettyName": {
+      "Description": "A short, human-friendly label to assign to the ELB (no capital letters).",
       "Type": "String"
     },
     "RetainIncompleteDays": {
@@ -160,7 +195,7 @@
       "Type": "String"
     },
     "ServiceSubnets": {
-      "Description": "Select three subnets - each from different Availability Zones.",
+      "Description": "Subnets to deploy service-elements to: select three subnets - each from different Availability Zones.",
       "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "ShardBucketInventoryTracking": {
@@ -196,6 +231,10 @@
       "MaxValue": "30",
       "MinValue": "1",
       "Type": "Number"
+    },
+    "UserFacingSubnets": {
+      "Description": "Subnets used by 'public' to access service-elements: select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
     }
   },
   "Resources": {
@@ -216,6 +255,37 @@
             [
               { "Ref": "RootTemplateUrl" },
               "make_artifactory-EE_EFS.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "ElbRes": {
+      "Properties": {
+        "Parameters": {
+          "ArtifactoryInstanceId": "",
+          "ArtifactoryListenPort": { "Ref": "ArtifactoryListenPort" },
+          "ArtifactoryListenerCert": { "Ref": "ArtifactoryListenerCert" },
+          "ArtifactoryServicePort": { "Ref": "ArtifactoryServicePort" },
+          "BackendTimeout": { "Ref": "BackendTimeout" },
+          "HaSubnets": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "UserFacingSubnets" }
+            ]
+          },
+          "ProxyPrettyName": { "Ref": "ProxyPrettyName" },
+          "SecurityGroupIds": { "Fn::GetAtt": [ "SgRes", "Outputs.AppSg" ] },
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_ELBv2.tmplt.json"
             ]
           ]
         },
