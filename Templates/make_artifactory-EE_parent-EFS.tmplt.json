@@ -25,6 +25,11 @@
       "Description": "(Optional) Destination for storing analytics data. Must be provided in ARN format.",
       "Type": "String"
     },
+    "CloudwatchBucketName": {
+      "Default": "amazoncloudwatch-agent",
+      "Description": "Name of the S3 Bucket hosting the CloudWatch agent archive files",
+      "Type": "String"
+    },
     "FinalExpirationDays": {
       "ConstraintDescription": "Must be an integer value greater than '0'.",
       "Default": "30",
@@ -38,6 +43,10 @@
       "MaxValue": "30",
       "MinValue": "0",
       "Type": "Number"
+    },
+    "RolePrefix": {
+      "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
+      "Type": "String"
     },
     "RootTemplateUrl": {
       "AllowedPattern": "^https://.*$",
@@ -80,18 +89,39 @@
     }
   },
   "Resources": {
+    "IamRes": {
+      "Properties": {
+        "Parameters": {
+          "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucketArn" ] },
+          "CloudwatchBucketName": { "Ref": "CloudwatchBucketName" },
+          "RolePrefix": { "Ref": "RolePrefix" },
+          "ShardBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.ShardBucketArn" ] }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_IAM-instance.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
     "S3Res": {
       "Properties": {
         "Parameters": {
-          "BackupBucketName": { "Ref": "BackupBucketName" },
           "BackupBucketInventoryTracking": { "Ref": "BackupBucketInventoryTracking" },
-          "FinalExpirationDays": { "Ref": "FinalExpirationDays" },
+          "BackupBucketName": { "Ref": "BackupBucketName" },
           "BackupReportingBucket": { "Ref": "BackupReportingBucket" },
+          "FinalExpirationDays": { "Ref": "FinalExpirationDays" },
           "RetainIncompleteDays": { "Ref": "RetainIncompleteDays" },
-          "TierToGlacierDays": { "Ref": "TierToGlacierDays" },
-          "ShardBucketName": { "Ref": "ShardBucketName" },
           "ShardBucketInventoryTracking": { "Ref": "ShardBucketInventoryTracking" },
-          "ShardReportingBucket": { "Ref": "ShardReportingBucket" }
+          "ShardBucketName": { "Ref": "ShardBucketName" },
+          "ShardReportingBucket": { "Ref": "ShardReportingBucket" },
+          "TierToGlacierDays": { "Ref": "TierToGlacierDays" }
         },
         "TemplateURL": {
           "Fn::Join": [
