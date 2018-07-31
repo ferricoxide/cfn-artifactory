@@ -1,0 +1,40 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template coordinates the running of the child-templates for the S3, SG, RDS, IAM, EFS, ELBv2 and EC2 stack-elements",
+  "Metadata": {},
+  "Outputs": {},
+  "Parameters": {
+    "RootTemplateUrl": {
+      "AllowedPattern": "^https://.*$",
+      "Description": "Root URL where all templated files are stored.",
+      "Type": "String"
+    },
+    "TargetVPC": {
+      "AllowedPattern": "^vpc-[0-9a-f]*$",
+      "Description": "ID of the VPC to deploy cluster nodes into.",
+      "Type": "AWS::EC2::VPC::Id"
+    }
+  },
+  "Resources": {
+    "SgRes": {
+      "Properties": {
+        "Parameters": {
+          "TargetVPC": {
+            "Ref": "TargetVPC"
+          }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory_SGs.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    }
+  }
+}
