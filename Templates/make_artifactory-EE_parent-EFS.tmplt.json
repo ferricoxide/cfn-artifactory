@@ -4,24 +4,112 @@
   "Metadata": {},
   "Outputs": {},
   "Parameters": {
+    "BackupBucketInventoryTracking": {
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "false",
+      "Description": "(Optional) Whether to enable generic bucket inventory-tracking. Requires setting of the 'BackupReportingBucket' parameter.",
+      "Type": "String"
+    },
+    "BackupBucketName": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*[a-z0-9]*$|^$",
+      "Description": "(Optional) Name to set for S3 Bucket used for longer-term retention of backups. Will be randomly named if left un-set.",
+      "Type": "String"
+    },
+    "BackupReportingBucket": {
+      "AllowedPattern": "^arn:.*$|^$",
+      "ConstraintDescription": "String must start with 'arn:' (or be left wholly blank).",
+      "Default": "",
+      "Description": "(Optional) Destination for storing analytics data. Must be provided in ARN format.",
+      "Type": "String"
+    },
+    "FinalExpirationDays": {
+      "ConstraintDescription": "Must be an integer value greater than '0'.",
+      "Default": "30",
+      "Description": "Number of days to retain objects before aging them out of the bucket",
+      "Type": "Number"
+    },
+    "RetainIncompleteDays": {
+      "ConstraintDescription": "Must be an integer value between '0' and '30'",
+      "Default": "3",
+      "Description": "Number of days to retain objects that were not completely uploaded.",
+      "MaxValue": "30",
+      "MinValue": "0",
+      "Type": "Number"
+    },
     "RootTemplateUrl": {
       "AllowedPattern": "^https://.*$",
       "Description": "Root URL where all templated files are stored.",
+      "Type": "String"
+    },
+    "ShardBucketInventoryTracking": {
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "false",
+      "Description": "(Optional) Whether to enable generic bucket inventory-tracking. Requires setting of the 'ShardReportingBucket' parameter.",
+      "Type": "String"
+    },
+    "ShardBucketName": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*[a-z0-9]*$|^$",
+      "Description": "(Optional) Name to set for S3 Bucket used for hosting live Artifactory data. Will be randomly named if left un-set.",
+      "Type": "String"
+    },
+    "ShardReportingBucket": {
+      "AllowedPattern": "^arn:.*$|^$",
+      "ConstraintDescription": "String must start with 'arn:' (or be left wholly blank).",
+      "Default": "",
+      "Description": "(Optional) Destination for storing analytics data. Must be provided in ARN format.",
       "Type": "String"
     },
     "TargetVPC": {
       "AllowedPattern": "^vpc-[0-9a-f]*$",
       "Description": "ID of the VPC to deploy cluster nodes into.",
       "Type": "AWS::EC2::VPC::Id"
+    },
+    "TierToGlacierDays": {
+      "ConstraintDescription": "Must be an integer value between '1' and '30'",
+      "Default": "5",
+      "Description": "Number of days to retain objects in standard storage tier.",
+      "MaxValue": "30",
+      "MinValue": "1",
+      "Type": "Number"
     }
   },
   "Resources": {
+    "S3Res": {
+      "Properties": {
+        "Parameters": {
+          "BackupBucketName": { "Ref": "BackupBucketName" },
+          "BackupBucketInventoryTracking": { "Ref": "BackupBucketInventoryTracking" },
+          "FinalExpirationDays": { "Ref": "FinalExpirationDays" },
+          "BackupReportingBucket": { "Ref": "BackupReportingBucket" },
+          "RetainIncompleteDays": { "Ref": "RetainIncompleteDays" },
+          "TierToGlacierDays": { "Ref": "TierToGlacierDays" },
+          "ShardBucketName": { "Ref": "ShardBucketName" },
+          "ShardBucketInventoryTracking": { "Ref": "ShardBucketInventoryTracking" },
+          "ShardReportingBucket": { "Ref": "ShardReportingBucket" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_S3-buckets.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
     "SgRes": {
       "Properties": {
         "Parameters": {
-          "TargetVPC": {
-            "Ref": "TargetVPC"
-          }
+          "TargetVPC": { "Ref": "TargetVPC" }
         },
         "TemplateURL": {
           "Fn::Join": [
