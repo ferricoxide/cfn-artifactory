@@ -349,6 +349,19 @@ function ReverseProxy {
              awk '/proxy_temp_path/{ print $2 }' "${PROXCONF}" | \
                sed -e 's/;$//' -e 's/\/$//'
             )
+         if [[ -z ${PROXTMPDIR} ]]
+         then
+            echo "Couldn't get dirname for proxy_temp_path"
+         else
+            if [[ -d ${PROXTMPDIR} ]]
+            then
+               echo "Directory '${PROXTMPDIR}' already exists"
+            else
+               printf "Creating %s... " "${PROXTMPDIR}"
+               install -d 000750 -o nginx -g nginx "${PROXTMPDIR}" && \
+                 echo "Success" || err_exit "Failed creating ${PROXTMPDIR}"
+            fi
+         fi
       fi
 
       # Call routine to tweak SEL config
