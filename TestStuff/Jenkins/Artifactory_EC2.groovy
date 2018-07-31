@@ -78,7 +78,7 @@ pipeline {
                 git branch: "${GitProjBranch}",
                     credentialsId: "${GitCred}",
                     url: "${GitProjUrl}"
-                writeFile file: 'EC2-Wam.parms.json',
+                writeFile file: 'EC2.parms.json',
                     text: /
                         [
                             {
@@ -284,7 +284,7 @@ pipeline {
                         aws --region "${AwsRegion}" cloudformation create-stack --stack-name "${CfnStackRoot}-Ec2Res" \
                           --disable-rollback --capabilities CAPABILITY_NAMED_IAM \
                           --template-url "${TemplateUrl}" \
-                          --parameters file://EC2-Wam.parms.json
+                          --parameters file://EC2.parms.json
  
                         sleep 15
  
