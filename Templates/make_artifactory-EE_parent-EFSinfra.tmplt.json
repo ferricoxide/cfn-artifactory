@@ -1,7 +1,72 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "This template coordinates the running of the child-templates for the S3, SG, RDS, IAM, EFS, ELBv2 and EC2 stack-elements",
-  "Metadata": {},
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Shared/Common Parameters"
+          },
+          "Parameters": [
+            "RootTemplateUrl",
+            "TargetVPC",
+            "ServiceSubnets",
+            "RolePrefix",
+            "CloudwatchBucketName"
+          ]
+        },
+        {
+          "Label": {
+            "default": "RDS Parameters"
+          },
+          "Parameters": [
+            "DbNodeName",
+            "DbInstanceName",
+            "DbAdminName",
+            "DbAdminPass",
+            "PgsqlVersion",
+            "DbInstanceType",
+            "DbDataSize",
+            "DbStorageType",
+            "DbStorageIops",
+            "DbIsMultiAz",
+            "DbSnapshotId"
+          ]
+        },
+        {
+          "Label": {
+            "default": "ELB Parameters"
+          },
+          "Parameters": [
+            "ProxyPrettyName",
+            "ArtifactoryListenerCert",
+            "ArtifactoryListenPort",
+            "ArtifactoryServicePort",
+            "BackendTimeout",
+            "UserFacingSubnets"
+          ]
+        },
+        {
+          "Label": {
+            "default": "S3 Bucket Parameters"
+          },
+          "Parameters": [
+            "BackupBucketName",
+            "BackupBucketInventoryTracking",
+            "BackupReportingBucket",
+            "TierToGlacierDays",
+            "RetainIncompleteDays",
+            "FinalExpirationDays",
+            "ShardBucketName",
+            "ShardBucketInventoryTracking",
+            "ShardReportingBucket"
+          ]
+        }
+      ],
+      "ParameterLabels": {}
+    }
+  },
   "Outputs": {},
   "Parameters": {
     "ArtifactoryListenPort": {
