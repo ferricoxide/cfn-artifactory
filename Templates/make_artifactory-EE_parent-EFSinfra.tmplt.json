@@ -67,7 +67,85 @@
       "ParameterLabels": {}
     }
   },
-  "Outputs": {},
+  "Outputs": {
+    "AppSg": {
+      "Description": "EFS security-group ID",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-AppSg" }
+      },
+      "Value": { "Fn::GetAtt": [ "SgRes", "Outputs.AppSg" ] }
+    },
+    "ArtifactoryAlbFqdn": {
+      "Description": "FQDN of the application load-balancer",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-AlbFqdn" }
+      },
+      "Value": { "Fn::GetAtt": [ "ElbRes", "Outputs.ArtifactoryAlbFqdn" ] }
+    },
+    "ArtifactoryAlbTgroupArn": {
+      "Description": "ARN of the application load-balancer's target-group",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-ArtifactoryAlbTgroupArn" }
+      },
+      "Value": { "Fn::GetAtt": [ "ElbRes", "Outputs.ArtifactoryAlbTgroupArn" ] }
+    },
+    "BackupBucketName": {
+      "Description": "Name of S3 bucket used for backups",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-BkupBucket" }
+      },
+      "Value": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucketName" ] }
+    },
+    "EfsEndpoint": {
+      "Description": "FQDN of EFS share",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-EfsEndpoint" }
+      },
+      "Value": { "Fn::GetAtt": [ "EfsRes", "Outputs.EfsEndpoint" ] }
+    },
+    "InstanceRoleName": {
+      "Description": "Name of the instance role",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-InstanceRoleName" }
+      },
+      "Value": { "Fn::GetAtt": [ "IamRes", "Outputs.InstanceRoleName" ] }
+    },
+    "InstanceRoleProfile": {
+      "Description": "Role-profile associated to EC2 instances",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-InstanceRoleProfile" }
+      },
+      "Value": { "Fn::GetAtt": [ "IamRes", "Outputs.InstanceRoleProfile" ] }
+    },
+    "NasSg": {
+      "Description": "EFS security-group ID",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-NasSg" }
+      },
+      "Value": { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] }
+    },
+    "RdsFqdn": {
+      "Description": "EFS security-group ID",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-RdsFqdn" }
+      },
+      "Value": { "Fn::GetAtt": [ "RdsRes", "Outputs.RdsEndpointAddress" ] }
+    },
+    "RdsSg": {
+      "Description": "EFS security-group ID",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-RdsSg" }
+      },
+      "Value": { "Fn::GetAtt": [ "SgRes", "Outputs.RdsSg" ] }
+    },
+    "ShardBucketName": {
+      "Description": "Name of S3 bucket used for live artifact storage",
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-ShardBucket" }
+      },
+      "Value": { "Fn::GetAtt": [ "S3Res", "Outputs.ShardBucketName" ] }
+    }
+  },
   "Parameters": {
     "ArtifactoryListenPort": {
       "Default": "443",
