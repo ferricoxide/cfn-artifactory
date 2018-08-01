@@ -160,7 +160,7 @@ pipeline {
                         echo "Attempting to create stack ${CfnStackRoot}-RdsRes..."
                         aws --region "${AwsRegion}" cloudformation create-stack --stack-name "${CfnStackRoot}-RdsRes" \
                           --disable-rollback --capabilities CAPABILITY_NAMED_IAM \
-                          --template-body file://Templates/make_artifactory-PRO_RDS.tmplt.json \
+                          --template-body file://Templates/Templates/make_artifactory-EE_RDS.tmplt.json \
                           --parameters file://Rds.parms.json
  
                         sleep 15
