@@ -1,0 +1,117 @@
+{
+    "Statement": [
+        {
+            "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "CFnPermissions"
+        },
+        {
+            "Action": [
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:CreateNetworkInterface",
+                "ec2:CreateSecurityGroup",
+                "ec2:CreateTags",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DeleteSecurityGroup",
+                "ec2:DescribeAccountAttributes",
+                "ec2:DescribeInstances",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeVpcs",
+                "ec2:RevokeSecurityGroupIngress"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "Ec2Permissions"
+        },
+        {
+            "Action": [
+                "elasticfilesystem:CreateFileSystem",
+                "elasticfilesystem:CreateMountTarget",
+                "elasticfilesystem:CreateTags",
+                "elasticfilesystem:DeleteFileSystem",
+                "elasticfilesystem:DeleteMountTarget",
+                "elasticfilesystem:DescribeFileSystems",
+                "elasticfilesystem:DescribeMountTargets"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "EfsPermissions"
+        },
+        {
+            "Action": [
+                "elasticloadbalancing:CreateListener",
+                "elasticloadbalancing:CreateLoadBalancer",
+                "elasticloadbalancing:CreateTargetGroup",
+                "elasticloadbalancing:DeleteListener",
+                "elasticloadbalancing:DeleteLoadBalancer",
+                "elasticloadbalancing:DeleteTargetGroup",
+                "elasticloadbalancing:DescribeListeners",
+                "elasticloadbalancing:DescribeLoadBalancers",
+                "elasticloadbalancing:DescribeTargetGroups"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "ElbPermissions"
+        },
+        {
+            "Action": [
+                "iam:AddRoleToInstanceProfile",
+                "iam:AttachRolePolicy",
+                "iam:CreateInstanceProfile",
+                "iam:CreatePolicy",
+                "iam:CreateRole",
+                "iam:DeleteInstanceProfile",
+                "iam:DeletePolicy",
+                "iam:DeleteRole",
+                "iam:DetachRolePolicy",
+                "iam:GetPolicy",
+                "iam:GetRole",
+                "iam:GetRolePolicy",
+                "iam:ListPolicyVersions",
+                "iam:PassRole",
+                "iam:RemoveRoleFromInstanceProfile"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "IamPermissions"
+        },
+        {
+            "Action": [
+                "rds:CreateDBInstance",
+                "rds:CreateDBParameterGroup",
+                "rds:CreateDBSubnetGroup",
+                "rds:DeleteDBInstance",
+                "rds:DeleteDBParameterGroup",
+                "rds:DeleteDBSubnetGroup",
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBSubnetGroups",
+                "rds:DescribeEngineDefaultParameters"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "RdsPermissions"
+        },
+        {
+            "Action": [
+                "s3:CreateBucket",
+                "s3:DeleteBucket",
+                "s3:GetAnalyticsConfiguration",
+                "s3:GetObject",
+                "s3:PutAnalyticsConfiguration",
+                "s3:PutBucketLogging",
+                "s3:PutLifecycleConfiguration"
+            ],
+            "Effect": "Allow",
+            "Resource": "*",
+            "Sid": "S3Permissions"
+        }
+    ],
+    "Version": "2012-10-17"
+}
