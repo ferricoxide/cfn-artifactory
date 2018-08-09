@@ -1,0 +1,439 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template coordinates the running of the child-templates for the S3, SG, RDS, IAM, ELBv2 and EC2 stack-elements",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Shared/Common Parameters"
+          },
+          "Parameters": [
+            "RootTemplateUrl",
+            "TargetVPC",
+            "ServiceSubnets",
+            "RolePrefix",
+            "CloudwatchBucketName"
+          ]
+        },
+        {
+          "Label": {
+            "default": "RDS Parameters"
+          },
+          "Parameters": [
+            "DbNodeName",
+            "DbInstanceName",
+            "DbAdminName",
+            "DbAdminPass",
+            "PgsqlVersion",
+            "DbInstanceType",
+            "DbDataSize",
+            "DbStorageType",
+            "DbStorageIops",
+            "DbIsMultiAz",
+            "DbSnapshotId"
+          ]
+        },
+        {
+          "Label": {
+            "default": "ELB Parameters"
+          },
+          "Parameters": [
+            "ProxyPrettyName",
+            "ArtifactoryListenerCert",
+            "ArtifactoryListenPort",
+            "ArtifactoryServicePort",
+            "BackendTimeout",
+            "UserFacingSubnets"
+          ]
+        },
+        {
+          "Label": {
+            "default": "S3 Bucket Parameters"
+          },
+          "Parameters": [
+            "BackupBucketName",
+            "BackupBucketInventoryTracking",
+            "BackupReportingBucket",
+            "TierToGlacierDays",
+            "RetainIncompleteDays",
+            "FinalExpirationDays",
+            "ShardBucketName",
+            "ShardBucketInventoryTracking",
+            "ShardReportingBucket"
+          ]
+        }
+      ],
+      "ParameterLabels": {}
+    }
+  },
+  "Outputs": {},
+  "Parameters": {
+    "ArtifactoryListenPort": {
+      "Default": "443",
+      "Description": "TCP Port number on which the Artifactory ELB listens for requests.",
+      "MaxValue": "65535",
+      "MinValue": "1",
+      "Type": "Number"
+    },
+    "ArtifactoryListenerCert": {
+      "Default": "",
+      "Description": "Name/ID of the ACM-managed SSL Certificate to protect public listener.",
+      "Type": "String"
+    },
+    "ArtifactoryServicePort": {
+      "Default": "8081",
+      "Description": "TCP Port number that the Artifactory host listens to.",
+      "MaxValue": "65535",
+      "Type": "Number"
+    },
+    "BackendTimeout": {
+      "Default": "600",
+      "Description": "How long - in seconds - back-end connection may be idle before attempting session-cleanup",
+      "MaxValue": "3600",
+      "MinValue": "60",
+      "Type": "Number"
+    },
+    "BackupBucketInventoryTracking": {
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "false",
+      "Description": "(Optional) Whether to enable generic bucket inventory-tracking. Requires setting of the 'BackupReportingBucket' parameter.",
+      "Type": "String"
+    },
+    "BackupBucketName": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*[a-z0-9]*$|^$",
+      "Description": "(Optional) Name to set for S3 Bucket used for longer-term retention of backups. Will be randomly named if left un-set.",
+      "Type": "String"
+    },
+    "BackupReportingBucket": {
+      "AllowedPattern": "^arn:.*$|^$",
+      "ConstraintDescription": "String must start with 'arn:' (or be left wholly blank).",
+      "Default": "",
+      "Description": "(Optional) Destination for storing analytics data. Must be provided in ARN format.",
+      "Type": "String"
+    },
+    "CloudwatchBucketName": {
+      "Default": "amazoncloudwatch-agent",
+      "Description": "Name of the S3 Bucket hosting the CloudWatch agent archive files",
+      "Type": "String"
+    },
+    "DbAdminName": {
+      "Description": "Name of the Artifactory master database-user.",
+      "Type": "String"
+    },
+    "DbAdminPass": {
+      "Default": "",
+      "Description": "Password of the Artifactory master database-user.",
+      "NoEcho": "True",
+      "Type": "String"
+    },
+    "DbDataSize": {
+      "ConstraintDescription": "Must be between 5GB and 6144GB.",
+      "Default": "5",
+      "Description": "Size in GiB of the RDS table-space to create.",
+      "MaxValue": "6144",
+      "MinValue": "5",
+      "Type": "Number"
+    },
+    "DbInstanceName": {
+      "Default": "",
+      "Description": "Instance-name of the Artifactory database.",
+      "Type": "String"
+    },
+    "DbInstanceType": {
+      "AllowedValues": [
+        "db.t2.micro",
+        "db.t2.small",
+        "db.t2.medium",
+        "db.t2.large",
+        "db.t2.xlarge",
+        "db.t2.2xlarge",
+        "db.m4.large",
+        "db.m4.xlarge",
+        "db.m4.2xlarge",
+        "db.m4.4xlarge",
+        "db.m3.medium",
+        "db.m3.large",
+        "db.m3.xlarge",
+        "db.m3.2xlarge",
+        "db.r4.large",
+        "db.r4.xlarge",
+        "db.r4.2xlarge",
+        "db.r4.4xlarge",
+        "db.r3.large",
+        "db.r3.xlarge",
+        "db.r3.2xlarge",
+        "db.r3.4xlarge"
+      ],
+      "Default": "db.t2.small",
+      "Description": "Amazon RDS instance type",
+      "Type": "String"
+    },
+    "DbIsMultiAz": {
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Default": "false",
+      "Description": "Select whether to create a multi-AZ RDS deployment.",
+      "Type": "String"
+    },
+    "DbNodeName": {
+      "Description": "NodeName of the Artifactory database.",
+      "Type": "String"
+    },
+    "DbSnapshotId": {
+      "AllowedPattern": "^$|^arn:.*$",
+      "Default": "",
+      "Description": "(Optional) RDS snapshot-ARN to clone new database from.",
+      "Type": "String"
+    },
+    "DbStorageIops": {
+      "Default": "1000",
+      "Description": "Provisioned-IOPS of storage to used to host DB-data.",
+      "MaxValue": "30000",
+      "MinValue": "1000",
+      "Type": "Number"
+    },
+    "DbStorageType": {
+      "AllowedValues": [
+        "standard",
+        "gp2",
+        "io1"
+      ],
+      "Default": "gp2",
+      "Description": "Type of storage used to host DB-data.",
+      "Type": "String"
+    },
+    "FinalExpirationDays": {
+      "ConstraintDescription": "Must be an integer value greater than '0'.",
+      "Default": "30",
+      "Description": "Number of days to retain objects before aging them out of the bucket",
+      "Type": "Number"
+    },
+    "PgsqlVersion": {
+      "AllowedValues": [
+        "10.4",
+        "10.3",
+        "9.6.9",
+        "9.6.8",
+        "9.6.6",
+        "9.6.5",
+        "9.6.3",
+        "9.6.2",
+        "9.6.1",
+        "9.5.13",
+        "9.5.12",
+        "9.5.10",
+        "9.5.9",
+        "9.5.7",
+        "9.5.6",
+        "9.5.4",
+        "9.5.2"
+      ],
+      "Default": "9.6.3",
+      "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
+      "Type": "String"
+    },
+    "ProxyPrettyName": {
+      "Description": "A short, human-friendly label to assign to the ELB (no capital letters).",
+      "Type": "String"
+    },
+    "RetainIncompleteDays": {
+      "ConstraintDescription": "Must be an integer value between '0' and '30'",
+      "Default": "3",
+      "Description": "Number of days to retain objects that were not completely uploaded.",
+      "MaxValue": "30",
+      "MinValue": "0",
+      "Type": "Number"
+    },
+    "RolePrefix": {
+      "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
+      "Type": "String"
+    },
+    "RootTemplateUrl": {
+      "AllowedPattern": "^https://.*$",
+      "Description": "Root URL where all templated files are stored.",
+      "Type": "String"
+    },
+    "ServiceSubnets": {
+      "Description": "Subnets to deploy service-elements to: select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "ShardBucketInventoryTracking": {
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "false",
+      "Description": "(Optional) Whether to enable generic bucket inventory-tracking. Requires setting of the 'ShardReportingBucket' parameter.",
+      "Type": "String"
+    },
+    "ShardBucketName": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*[a-z0-9]*$|^$",
+      "Description": "(Optional) Name to set for S3 Bucket used for hosting live Artifactory data. Will be randomly named if left un-set.",
+      "Type": "String"
+    },
+    "ShardReportingBucket": {
+      "AllowedPattern": "^arn:.*$|^$",
+      "ConstraintDescription": "String must start with 'arn:' (or be left wholly blank).",
+      "Default": "",
+      "Description": "(Optional) Destination for storing analytics data. Must be provided in ARN format.",
+      "Type": "String"
+    },
+    "TargetVPC": {
+      "AllowedPattern": "^vpc-[0-9a-f]*$",
+      "Description": "ID of the VPC to deploy cluster nodes into.",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "TierToGlacierDays": {
+      "ConstraintDescription": "Must be an integer value between '1' and '30'",
+      "Default": "5",
+      "Description": "Number of days to retain objects in standard storage tier.",
+      "MaxValue": "30",
+      "MinValue": "1",
+      "Type": "Number"
+    },
+    "UserFacingSubnets": {
+      "Description": "Subnets used by 'public' to access service-elements: select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    }
+  },
+  "Resources": {
+    "ElbRes": {
+      "Properties": {
+        "Parameters": {
+          "ArtifactoryInstanceId": "",
+          "ArtifactoryListenPort": { "Ref": "ArtifactoryListenPort" },
+          "ArtifactoryListenerCert": { "Ref": "ArtifactoryListenerCert" },
+          "ArtifactoryServicePort": { "Ref": "ArtifactoryServicePort" },
+          "BackendTimeout": { "Ref": "BackendTimeout" },
+          "HaSubnets": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "UserFacingSubnets" }
+            ]
+          },
+          "ProxyPrettyName": { "Ref": "ProxyPrettyName" },
+          "SecurityGroupIds": { "Fn::GetAtt": [ "SgRes", "Outputs.AppSg" ] },
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_ELBv2.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "IamRes": {
+      "Properties": {
+        "Parameters": {
+          "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucketArn" ] },
+          "CloudwatchBucketName": { "Ref": "CloudwatchBucketName" },
+          "RolePrefix": { "Ref": "RolePrefix" },
+          "ShardBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.ShardBucketArn" ] }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_IAM-instance.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "RdsRes": {
+      "Properties": {
+        "Parameters": {
+          "DbAdminName": { "Ref": "DbAdminName" },
+          "DbAdminPass": { "Ref": "DbAdminPass" },
+          "DbDataSize": { "Ref": "DbDataSize" },
+          "DbInstanceName": { "Ref": "DbInstanceName" },
+          "DbInstanceType": { "Ref": "DbInstanceType" },
+          "DbIsMultiAz": { "Ref": "DbIsMultiAz" },
+          "DbNodeName": { "Ref": "DbNodeName" },
+          "DbSecurityGroup": { "Fn::GetAtt": [ "SgRes", "Outputs.RdsSg" ] },
+          "DbSnapshotId": { "Ref": "DbSnapshotId" },
+          "DbStorageIops": { "Ref": "DbStorageIops" },
+          "DbStorageType": { "Ref": "DbStorageType" },
+          "DbSubnets": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "ServiceSubnets" }
+            ]
+          },
+          "PgsqlVersion": { "Ref": "PgsqlVersion" },
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_RDS.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "60"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "S3Res": {
+      "Properties": {
+        "Parameters": {
+          "BackupBucketInventoryTracking": { "Ref": "BackupBucketInventoryTracking" },
+          "BackupBucketName": { "Ref": "BackupBucketName" },
+          "BackupReportingBucket": { "Ref": "BackupReportingBucket" },
+          "FinalExpirationDays": { "Ref": "FinalExpirationDays" },
+          "RetainIncompleteDays": { "Ref": "RetainIncompleteDays" },
+          "ShardBucketInventoryTracking": { "Ref": "ShardBucketInventoryTracking" },
+          "ShardBucketName": { "Ref": "ShardBucketName" },
+          "ShardReportingBucket": { "Ref": "ShardReportingBucket" },
+          "TierToGlacierDays": { "Ref": "TierToGlacierDays" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory-EE_S3-buckets.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "SgRes": {
+      "Properties": {
+        "Parameters": {
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Fn::Join": [
+            "/",
+            [
+              { "Ref": "RootTemplateUrl" },
+              "make_artifactory_SGs.tmplt.json"
+            ]
+          ]
+        },
+        "TimeoutInMinutes": "15"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    }
+  }
+}
